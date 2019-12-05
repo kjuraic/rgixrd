@@ -51,6 +51,7 @@ read_mcx_xrd_multi <- function(xrd_files = tcltk::tk_choose.files()) {
 #' @author K. Juraic
 #' @param file_name GIXRD data file name
 #' @return list with GIXRD data
+#' @export
 #' @examples
 #'             \dontrun{read_spec("gixrd_name")}
 read_spec <- function(file_name){
@@ -59,16 +60,16 @@ read_spec <- function(file_name){
   blank_line <- c(blank_line, length(tmp))
   diff(blank_line)
   xrd_dat <- list()
-
   for(i in 1:(length(blank_line)-1)){
     xrd_command <- tmp[blank_line[i]+1]
     xrd_date <- tmp[blank_line[i]+2]
     xrd_acqTime <- tmp[blank_line[i]+3]
+    th <- as.numeric(strsplit(tmp[blank_line[i]+9]," ")[[1]][3])
     dat <- read.table(file_name,
                       skip=blank_line[i]+12,
                       nrows = diff(blank_line)[i]-13,
                       col.names = c("tth", "H", "K", "L", "Epoch", "Seconds", "Monitor", "Detector"))
-    xrd_dat[[i]] <- list(command = xrd_command, date = xrd_date, acqTime = xrd_acqTime, dat = dat)
+    xrd_dat[[i]] <- list(command = xrd_command, date = xrd_date, acqTime = xrd_acqTime, th = th, dat = dat)
   }
 
   return(xrd_dat)
@@ -95,6 +96,30 @@ gixrd_average <- function(xrd_dat){
   intensity_median <- apply(X = intensity_mat, MARGIN = 2, FUN = median, na.rm = TRUE)
   xrd_av <- data.frame(tth, Imean = intensity_mean, Isd = intensity_sd, Imedian = intensity_median)
   return(xrd_av)
+}
+
+
+#' read_mercury_hkl(file_name)
+#' @description read mercury hkl file with d spacing [Angstrom],
+#'              structure factor and multiplicit for (hkl) difraction peaks
+#' @author K. Juraic
+#' @param file_name mercurt *.hkl file name
+#' @return data.frame(h, k, l, d, f2, mult)
+#' @examples
+#' \dontrun{read_mercury_hkl("ZnO.hkl")}
+#'
+read_mercury_hkl <- function(file_name = file.choose()) {
+  if (file.exists(file_name)) {
+    dat = read.table(file = file_name, header = TRUE)
+    if (dim(dat)[2] != 6) {
+      cat("File format not valid!\n\t File should have 6 columns!\n")
+    } else {
+      names(dat) <- c("h", "k", "l", "d", "f2", "mult")
+      return(dat)
+    }
+  } else {
+    cat("File does not exist!\n")
+  }
 }
 
 

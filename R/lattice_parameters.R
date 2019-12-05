@@ -1,4 +1,36 @@
 
+#' d_2_tth(d, lambda)
+#'
+#' @description calculate position of XRD peak in 2*theta scale for d-spacing and
+#'              wavelength lambda. d-spacing and wavelength shoud be given in same
+#'              units: angstroms or nanometers
+#' @author K. Juraić
+#' @param d d-spacing in angstroms
+#' @param lambda X-ray wavelength in angstroms
+#' @return tth 2*theta position of XRD peak
+#' @export
+#' @examples d_2_tth(1.59, 1.54056)
+d_2_tth <- function(d, lambda = 1.54056) {
+  tth <- 360 / pi * asin(.5 * lambda / d)
+  tth
+}
+
+
+#' d_tth_2_d(tth, lambda)
+#'
+#' @description calculate d-spacing for tth position of XRD peak in 2*theta scale
+#'              tth should be given in degrees
+#' @author K. Juraić
+#' @param tth 2*theta position of XRD peak in degrees
+#' @param lambda X-ray wavelength in angstroms or nanometers
+#' @return d-spacing in same units as wavelength
+#' @export
+#' @examples tth_2_d(28.1, 1.54056)
+tth_2_d <- function(tth, lambda = 1.54056) {
+  d <- .5 * lambda / sin(tth * pi / 360.)
+  d
+}
+
 
 #' tetragonal_hkl_2_d(h, k, l, a, c)
 #'

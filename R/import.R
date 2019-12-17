@@ -51,6 +51,9 @@ read_mcx_xrd_multi <- function(xrd_files = tcltk::tk_choose.files()) {
 #' @author K. Juraic
 #' @param file_name GIXRD data file name
 #' @return list with GIXRD data
+#' @importFrom stringr str_replace
+#' @importFrom stringr str_split
+#' @importFrom magrittr %>%
 #' @export
 #' @examples
 #'             \dontrun{read_spec("gixrd_name")}
@@ -58,20 +61,31 @@ read_spec <- function(file_name){
   tmp <- readLines(file_name)
   blank_line <- which(tmp == "")
   blank_line <- c(blank_line, length(tmp))
-  diff(blank_line)
+  #diff(blank_line)
   xrd_dat <- list()
   for(i in 1:(length(blank_line)-1)){
-    xrd_command <- tmp[blank_line[i]+1]
-    xrd_date <- tmp[blank_line[i]+2]
-    xrd_acqTime <- tmp[blank_line[i]+3]
-    th <- as.numeric(strsplit(tmp[blank_line[i]+9]," ")[[1]][3])
-    dat <- read.table(file_name,
-                      skip=blank_line[i]+12,
-                      nrows = diff(blank_line)[i]-13,
-                      col.names = c("tth", "H", "K", "L", "Epoch", "Seconds", "Monitor", "Detector"))
-    xrd_dat[[i]] <- list(command = xrd_command, date = xrd_date, acqTime = xrd_acqTime, th = th, dat = dat)
+    scan_lines <- tmp[(blank_line[i]+1):blank_line[i+1]]
+    scan_header <- scan_lines[startsWith(x = scan_lines, "#")]
+    scan_points <- scan_lines[!startsWith(x = scan_lines, "#")]
+    xrd_command <- scan_lines[startsWith(x = scan_lines, "#S")]
+    xrd_date <- scan_lines[startsWith(x = scan_lines, "#D")]
+    xrd_acqTime <- scan_lines[startsWith(x = scan_lines, "#T")]
+    n_column <- scan_lines[startsWith(x = scan_lines, "#N")] %>%
+      str_replace(pattern = "#N ", replacement = "") %>%
+      as.numeric()
+    n_points <- scan_lines[startsWith(x = scan_lines, "#P1")] %>%
+      str_replace(pattern = "#P1 ", replacement = "") %>%
+      as.numeric()
+    init_values <-scan_lines[startsWith(x = scan_lines, "#P0")] %>%
+      str_replace(pattern = "#P0 ", replacement = "") %>%
+      str_split(pattern = " +") %>% unlist() %>% as.numeric()
+    init_values_name <-tmp[startsWith(x = tmp, "#O0")] %>% str_split(pattern = " +") %>% unlist()
+    names(init_values) <- init_values_name[-1]
+    col_nms <- strsplit(x = scan_lines[startsWith(x = scan_lines, "#L")], split = " +") %>% unlist()
+    dat <- read.table(textConnection(scan_points))
+    colnames(dat) <- col_nms[-1]
+    xrd_dat[[i]] <- list(command = xrd_command, date = xrd_date, acqTime = xrd_acqTime, init_values, dat = dat)
   }
-
   return(xrd_dat)
 }
 
@@ -80,13 +94,15 @@ read_spec <- function(file_name){
 #' @description calculate average difractogram from list of GIXRD scans read by
 #'              gixrd_read_file function (Maja difractomerer file format).
 #' @param xrd_dat list with GIDRD scans data
+#' @param scans_to_average array of scans ids to average
 #' @return data frame with calculated average
 #' @examples \dontrun{gixrd_average(gixrd_data)}
 #' @importFrom stats sd median
 #' @importFrom utils read.table
 #' @export
-gixrd_average <- function(xrd_dat){
-  tth <- xrd_dat[[1]]$dat$tth
+gixrd_average <- function(xrd_dat, scans_to_average = 1:length(xrd_dat)){
+  xrd_dat <- xrd_dat[scans_to_average]
+  tth <- xrd_dat[[1]]$dat$TwoTheta
   intensity_mat <- matrix(NA, nrow = length(xrd_dat), ncol = length(tth))
   for (i in 1:length(xrd_dat)) {
     intensity_mat[i,1:length(xrd_dat[[i]]$dat$Detector)] <- xrd_dat[[i]]$dat$Detector
@@ -105,6 +121,7 @@ gixrd_average <- function(xrd_dat){
 #' @author K. Juraic
 #' @param file_name mercurt *.hkl file name
 #' @return data.frame(h, k, l, d, f2, mult)
+#' @export
 #' @examples
 #' \dontrun{read_mercury_hkl("ZnO.hkl")}
 #'

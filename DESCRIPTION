@@ -17,4 +17,6 @@ Imports:
   plyr,
   stats,
   utils,
-  ggplot2
+  ggplot2,
+  stringr,
+  magrittr

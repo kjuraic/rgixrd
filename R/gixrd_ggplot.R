@@ -27,6 +27,6 @@ xrd_ggplot_style <- function(p) {
 #' @iport ggplot2
 #' @examples \dontrun{xrd_ggplot_add_peak_pos(p, df, c(0,100))}
 xrd_ggplot_add_peak_pos <- function(p, peaks_df, stick_y = c(-100, 0)) {
-  pp <- p + geom_linerange(data = peaks_df, mapping = aes(x = tth, ymin = stick_y[1], ymax = stick_y[2]))
+  pp <- p + geom_linerange(data = peaks_df, mapping = aes_(x = ~ tth, ymin = stick_y[1], ymax = stick_y[2]))
   pp
 }

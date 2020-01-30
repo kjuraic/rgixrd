@@ -11,7 +11,7 @@ Description: Package dedicated to import, export, analyze experimental data obta
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
 Imports:
   tcltk,
   plyr,
@@ -19,4 +19,5 @@ Imports:
   utils,
   ggplot2,
   stringr,
-  magrittr
+  magrittr,
+  stringr

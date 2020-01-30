@@ -9,6 +9,9 @@ xrd_ggplot_style(p)
 \arguments{
 \item{p}{ggplot2 with experimental data}
 }
+\value{
+
+}
 \description{
 add GIXRD style to ggplot of experimental data
 }

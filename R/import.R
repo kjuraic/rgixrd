@@ -84,7 +84,11 @@ read_spec <- function(file_name){
     col_nms <- strsplit(x = scan_lines[startsWith(x = scan_lines, "#L")], split = " +") %>% unlist()
     dat <- read.table(textConnection(scan_points))
     colnames(dat) <- col_nms[-1]
-    xrd_dat[[i]] <- list(command = xrd_command, date = xrd_date, acqTime = xrd_acqTime, init_values, dat = dat)
+    xrd_dat[[i]] <- list(command = xrd_command,
+                         date = xrd_date,
+                         acqTime = xrd_acqTime,
+                         init_values = init_values,
+                         dat = dat)
   }
   return(xrd_dat)
 }

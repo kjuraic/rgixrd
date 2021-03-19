@@ -10,7 +10,7 @@ xrd_ggplot_style(p)
 \item{p}{ggplot2 with experimental data}
 }
 \value{
-
+pp ggplot graphics (XRD difractogram)
 }
 \description{
 add GIXRD style to ggplot of experimental data

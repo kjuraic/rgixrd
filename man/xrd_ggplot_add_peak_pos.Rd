@@ -14,7 +14,7 @@ xrd_ggplot_add_peak_pos(p, peaks_df, stick_y = c(-100, 0))
 \item{stick_y}{(y_min, y(max)) y coordinates of stick stard and end}
 }
 \value{
-
+pp ggplot graphics (XRD difractogram)
 }
 \description{
 add marks for XRD peak positions (tth) to gglot XRD graph

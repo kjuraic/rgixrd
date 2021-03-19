@@ -23,6 +23,7 @@ read_mcx_xrd <- function(xrd_file = tcltk::tk_choose.files(multi = FALSE)){
     cat("\t 2*theta = [", min(xrd_dat$tth), " - ", max(xrd_dat$tth), "]   N-points = ", length(xrd_dat$tth), "\n" )
   } else {
     cat("[", xrd_file, "] does not exist\n")
+    xrd_dat <- data.frame()
   }
   list(file = xrd_file, alpha_i = alpha_i, data = xrd_dat)
 }
@@ -41,6 +42,48 @@ read_mcx_xrd_multi <- function(xrd_files = tcltk::tk_choose.files()) {
   xrd_lst
 }
 
+#' file_name_2_sample_name(file_name)
+#' @author K. Juraić
+#' @description extract sample name from file full path, removing directory
+#'              structure and file extension
+#' @param file_name file full path
+#'
+#' @return sample_name extracted sample name
+#' @export
+#'
+#' @examples file_name_2_sample_name("../ime_uzorka.dat")
+file_name_2_sample_name <- function(file_name) {
+  sample_name <- tools::file_path_sans_ext(base::basename(file_name))
+  return(sample_name)
+}
+
+#' read_xrd_data(data_dir =  tcltk::tk_choose.dir(), pattern = "")
+#' @author K. Juraić
+#' @description read xrd experimental data from folder selected by file extension
+#'              At the moment applicable for .xy and Bruker .raw format
+#' @param data_dir folder path with xrd files
+#' @param pattern  file extension (.xy, .raw)
+#'
+#' @return data.frame(tth, intesity)
+#' @export
+#' @importFrom purrr map
+#' @importFrom purrr map2_df
+#'
+#' @examples \dontrun{read_xrd_data("../data)}
+read_xrd_data <- function(data_dir =  tcltk::tk_choose.dir(), pattern = ""){
+  fnms <- list.files(path = data_dir, pattern = pattern, full.names = TRUE)
+  sample_names <- file_name_2_sample_name(fnms)
+  if (pattern == ".xy") {
+    dat_lst <- purrr::map(.x = fnms, .f = read_xy)
+    dat_df <- purrr::map2_df(.x = dat_lst, .y = sample_names, .f = ~ mutate(.x, name = .y))
+  } else if (pattern == ".raw") {
+    dat_lst <- purrr::map(.x = fnms, .f = read_bruker_raw4)
+    dat_df <- purrr::map2_df(.x = dat_lst, .y = sample_names, .f = ~ mutate(.x, name = .y))
+  }
+  cat(paste("Found", length(fnms), "files:\n"))
+  print(fnms)
+  return(dat_df)
+}
 
 # read_spec(file_name) ----------------------------------------------
 #' Read GIXRD data from file (Buljan instrument)
@@ -93,6 +136,72 @@ read_spec <- function(file_name){
   return(xrd_dat)
 }
 
+
+#' read XRD data from xy file
+#' @author K. Juraić
+#' @description read XRD data from xy file. Can be generated from raw instrument
+#'              data with powDLL software. Data are stored as two
+#'              column (tth, intensity).
+#' @param file_name XRD data filename (full path)
+#'
+#' @return data.frame(tth, intensity)
+#' @importFrom readr read_table2
+#' @export
+#'
+#' @examples \dontrun{read_xy(""XRD_pattern.xy)}
+#'
+read_xy <- function(file_name) {
+  xy_data <- read_table2(file_name, col_names = c("tth", "intensity"))
+  return(xy_data)
+}
+
+
+#' read Bruker raw file (version 4)
+#' @author K. Juraić
+#' @description read Bruker XRD raw file (version 4.0)
+#' @param file_name full path of file with XRD data
+#'
+#' @return data.frame(tth, intensity)
+#' @export
+#'
+#' @examples \dontrun{read_bruker_raw4("XRD_pattern.raw")}
+#'
+read_bruker_raw4 <- function(file_name) {
+  file_size <- file.size(file_name)
+  con = file(file_name, "rb")
+  # Bruker raw file version
+  bruker_version <- readBin(con = con, character(), size = 5, n = 1)
+  bruker_version
+  # Date
+  seek(con, 12)
+  bruker_date <- readBin(con = con, character(), size = 10, n = 1)
+  bruker_date
+  #Time
+  seek(con, 24)
+  bruker_time <- readBin(con = con, character(), size = 8, n = 1)
+  bruker_time
+  # N points
+  seek(con, 471)
+  n_points <- readBin(con = con, integer(), n = 1)
+  n_points
+  # data tth start and step
+  seek(con, 539)
+  dat <- readBin(con = con, double(), n = 2)
+  dat[1:2]
+  # tth scale
+  tth <- seq(from = dat[1], by = dat[2], length.out = n_points)
+  # byte where intensity data starts (32bit double)
+  data_start_byte <- file_size - n_points*4
+  seek(con, data_start_byte)
+  # read intensity data
+  intensity <- readBin(con = con, double(), size = 4, n = n_points)
+  close(con)
+  bruker_data <- data.frame(tth = tth, intensity = intensity)
+  return(bruker_data)
+}
+
+
+
 # gixrd_average(xrd_dat) -------------------------------------------------
 #' gixrd_average(xrd_dat)
 #' @description calculate average difractogram from list of GIXRD scans read by
@@ -119,6 +228,35 @@ gixrd_average <- function(xrd_dat, scans_to_average = 1:length(xrd_dat)){
 }
 
 
+# gixrd_read_file_lst(file_names, save_to_file = TRUE) ----------------------
+#' gixrd_read_file_lst(file_names, save_to_file = TRUE)
+#' @description Automaticaly read multiple files with GIXRD data and
+#'              average them and write averaged data to files
+#' @param file_names array of file names with GIXRD data (full paths)
+#' @param save_to_file Should be the averaged data saved to file
+#' @return list of data frames with averaged data
+#' @examples \dontrun{gixrd_aveeage_lst(fnms)}
+#' @export
+gixrd_average_lst <- function(file_names, save_to_file = FALSE) {
+  xrd_lst <- list()
+  for (i in 1:length(file_names)) {
+    cat("[",i,"] ", file_names[i],"\n")
+    xrd_dat <- read_spec(file_names[i])
+    xrd_av <- gixrd_average(xrd_dat)
+    xrd_lst[[i]] <- xrd_av
+    if (save_to_file == TRUE) {
+      fnm <- paste0(file_names[i], ".dat")
+      utils::write.table(x = xrd_av,
+                  file = fnm,
+                  sep = "\t",
+                  row.names = FALSE, col.names = TRUE)
+      cat("\tWriting to file:", fnm, "\n")
+    }
+  }
+  return(xrd_lst)
+}
+
+
 #' read_mercury_hkl(file_name)
 #' @description read mercury hkl file with d spacing [Angstrom],
 #'              structure factor and multiplicit for (hkl) difraction peaks
@@ -142,6 +280,8 @@ read_mercury_hkl <- function(file_name = file.choose()) {
     cat("File does not exist!\n")
   }
 }
+
+
 
 
 

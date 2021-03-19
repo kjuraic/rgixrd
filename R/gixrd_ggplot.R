@@ -3,7 +3,7 @@
 #'
 #' @author K. Juraic
 #' @param p ggplot2 with experimental data
-#' @return
+#' @return pp ggplot graphics (XRD difractogram)
 #' @import ggplot2
 #' @export
 #' @examples \dontrun{xrd_ggplot_style(p)}
@@ -22,7 +22,7 @@ xrd_ggplot_style <- function(p) {
 #' @param p ggplot XRD graph
 #' @param peaks_df data.frame with column tth (xrd peaks possitions)
 #' @param stick_y (y_min, y(max)) y coordinates of stick stard and end
-#' @return
+#' @return pp ggplot graphics (XRD difractogram)
 #' @export
 #' @iport ggplot2
 #' @examples \dontrun{xrd_ggplot_add_peak_pos(p, df, c(0,100))}

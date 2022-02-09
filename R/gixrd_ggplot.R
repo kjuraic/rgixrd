@@ -9,7 +9,6 @@
 #' @examples \dontrun{xrd_ggplot_style(p)}
 xrd_ggplot_style <- function(p) {
   pp <- p + theme_bw(base_size = 20) +
-            theme(legend.position = "none") +
             xlab(expression(2*theta~'['*degree*']')) +
             ylab('Intensity [a.u.]')
   pp

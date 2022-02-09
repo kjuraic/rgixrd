@@ -46,6 +46,7 @@ read_mcx_xrd_multi <- function(xrd_files = tcltk::tk_choose.files()) {
 #' @author K. Juraić
 #' @description extract sample name from file full path, removing directory
 #'              structure and file extension
+#'
 #' @param file_name file full path
 #'
 #' @return sample_name extracted sample name
@@ -63,14 +64,15 @@ file_name_2_sample_name <- function(file_name) {
 #'              At the moment applicable for .xy and Bruker .raw format
 #' @param data_dir folder path with xrd files
 #' @param pattern  file extension (.xy, .raw)
+#' @param plot_data preview imported data in ggplot graph
 #'
 #' @return data.frame(tth, intesity)
 #' @export
 #' @importFrom purrr map
 #' @importFrom purrr map2_df
 #'
-#' @examples \dontrun{read_xrd_data("../data)}
-read_xrd_data <- function(data_dir =  tcltk::tk_choose.dir(), pattern = ""){
+#' @examples \dontrun{read_xrd_data("../data", pattern = ".raw", plot_data = FALSE)}
+read_xrd_data <- function(data_dir =  tcltk::tk_choose.dir(), pattern = ".xy", plot_data = TRUE){
   fnms <- list.files(path = data_dir, pattern = pattern, full.names = TRUE)
   sample_names <- file_name_2_sample_name(fnms)
   if (pattern == ".xy") {
@@ -79,9 +81,17 @@ read_xrd_data <- function(data_dir =  tcltk::tk_choose.dir(), pattern = ""){
   } else if (pattern == ".raw") {
     dat_lst <- purrr::map(.x = fnms, .f = read_bruker_raw4)
     dat_df <- purrr::map2_df(.x = dat_lst, .y = sample_names, .f = ~ mutate(.x, name = .y))
+  } else if (pattern = ".spec") {
+
   }
   cat(paste("Found", length(fnms), "files:\n"))
   print(fnms)
+  if (plot_data == TRUE) {
+    p <- ggplot2::ggplot(data = dat_df) +
+      ggplot2::geom_line(mapping = ggplot2::aes_string(x = "tth", y = "intensity", color = "name"))
+    pp <- rgixrd::xrd_ggplot_style(p)
+    print(pp)
+  }
   return(dat_df)
 }
 

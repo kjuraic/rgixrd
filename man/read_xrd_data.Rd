@@ -4,12 +4,18 @@
 \alias{read_xrd_data}
 \title{read_xrd_data(data_dir =  tcltk::tk_choose.dir(), pattern = "")}
 \usage{
-read_xrd_data(data_dir = tcltk::tk_choose.dir(), pattern = "")
+read_xrd_data(
+  data_dir = tcltk::tk_choose.dir(),
+  pattern = ".xy",
+  plot_data = TRUE
+)
 }
 \arguments{
 \item{data_dir}{folder path with xrd files}
 
 \item{pattern}{file extension (.xy, .raw)}
+
+\item{plot_data}{preview imported data in ggplot graph}
 }
 \value{
 data.frame(tth, intesity)
@@ -17,6 +23,9 @@ data.frame(tth, intesity)
 \description{
 read xrd experimental data from folder selected by file extension
              At the moment applicable for .xy and Bruker .raw format
+}
+\examples{
+\dontrun{read_xrd_data("../data", pattern = ".raw", plot_data = FALSE)}
 }
 \author{
 K. Juraić

@@ -81,8 +81,9 @@ read_xrd_data <- function(data_dir =  tcltk::tk_choose.dir(), pattern = ".xy", p
   } else if (pattern == ".raw") {
     dat_lst <- purrr::map(.x = fnms, .f = read_bruker_raw4)
     dat_df <- purrr::map2_df(.x = dat_lst, .y = sample_names, .f = ~ mutate(.x, name = .y))
-  } else if (pattern = ".spec") {
-
+  } else if (pattern == ".spec") {
+    dat_lst <- purrr::map(.x = fnms, .f =~ gixrd_average_lst(file_names = .x, save_to_file = FALSE))
+    dat_df <- purrr::map2_df(.x = dat_lst, .y = sample_names, .f = ~ mutate(.x, name = .y))
   }
   cat(paste("Found", length(fnms), "files:\n"))
   print(fnms)
